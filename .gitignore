@@ -1,17 +1,14 @@
-# Created by .ignore support plugin (hsz.mobi)
-### OSX template
 .DS_Store
-.AppleDouble
-.LSOverride
-### JetBrains template
-# Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio
+*.log
+.vscode/*
+/scripts/node_modules
+/node_modules
+/dist
+.idea
 
-*.iml
+.env
+.history
 
-## Directory-based project format:
-.idea/
-
-
-node_modules
-dist
-npm-debug.log
+.DS_Store
+yarn-error.log
+yarn.lock

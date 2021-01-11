@@ -1,14 +1,9 @@
-/**
- * Created by satadru on 3/31/17.
- */
 export default class EPGUtils {
     getShortTime(timeMillis) {
-        var now = new Date(timeMillis);
-        var hour = now.getHours();
-        var minutes = now.getMinutes();
-        //return dateWithouthSecond.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        var minutes = now.getMinutes();
-        var ampm = "AM";
+        const now = new Date(timeMillis);
+        let hour = now.getHours();
+        let minutes = now.getMinutes();
+        let ampm = "AM";
         if (minutes < 15) {
             minutes = "00";
         } else if (minutes < 45){

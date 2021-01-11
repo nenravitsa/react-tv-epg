@@ -1,28 +1,10 @@
-/**
- * Created by satadru on 3/30/17.
- */
-import EPGChannel from '../models/EPGChannel';
-import EPGEvent from '../models/EPGEvent';
-
-
 import MockDataService from '../utils/MockDataService';
 
 export default class EPGData {
-
     constructor() {
-        /*this.channels = new Array();
-        this.events = new Array();*/
         this.data = MockDataService.getMockData();
         if (this.data) {
-            /*this.data.forEach((values, key) => {
-                this.channels.push(key);
-                values.forEach((value) => {
-                    this.events.push(value);
-                });
-
-            });*/
             this.channels = this.data;
-            //this.events = Array.from(this.data.values());
         }
     }
 
