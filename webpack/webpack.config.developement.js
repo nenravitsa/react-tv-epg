@@ -29,6 +29,10 @@ module.exports = {
     modules: ["node_modules", "src"],
     plugins: [
       new DirectoryNamedWebpackPlugin()
-    ]
+    ],
+    alias: {
+      react: 'preact/compat',
+      'react-dom': 'preact/compat',
+    },
   }
 }
