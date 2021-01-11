@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 
 import Rect from '../models/Rect';
-import EPGData from '../utils/EPGData';
+import MockDataService from '../utils/MockDataService';
 import EPGUtils from '../utils/EPGUtils';
 import { EPG } from '../constants';
 import Styles from '../styles/app.css';
@@ -20,7 +20,7 @@ export default class TVGuide extends Component {
 
   constructor(props) {
     super(props);
-    this.epgData = new EPGData();
+    this.epgData = MockDataService.getMockData();
     this.epgUtils = new EPGUtils();
 
     this.scrollX = 0;
@@ -57,7 +57,7 @@ export default class TVGuide extends Component {
 
   calculateMaxVerticalScroll() {
     const maxVerticalScroll =
-      this.getTopFrom(this.epgData.getChannelCount() - 2) + EPG.channelHeight;
+      this.getTopFrom(this.epgData.length - 2) + EPG.channelHeight;
     const height = TVGuide.getHeight();
     this.maxVerticalScroll =
       maxVerticalScroll < height ? 0 : maxVerticalScroll - height;
@@ -75,11 +75,11 @@ export default class TVGuide extends Component {
   }
 
   getProgramPosition(channelPosition, time) {
-    let events = this.epgData.getEvents(channelPosition);
+    let { events } = this.epgData[channelPosition];
     if (events != null) {
       for (let eventPos = 0; eventPos < events.length; eventPos++) {
         let event = events[eventPos];
-        if (event.getStart() <= time && event.getEnd() >= time) {
+        if (event.start <= time && event.end >= time) {
           return eventPos;
         }
       }
@@ -88,10 +88,8 @@ export default class TVGuide extends Component {
   }
 
   getFirstVisibleChannelPosition() {
-    const y = this.scrollY;
-
     const position = Math.trunc(
-      (y - EPG.channelMargin - EPG.timeBarHeight) /
+      (this.scrollY - EPG.channelMargin - EPG.timeBarHeight) /
         (EPG.channelHeight + EPG.channelMargin),
     );
 
@@ -99,11 +97,10 @@ export default class TVGuide extends Component {
   }
 
   getLastVisibleChannelPosition() {
-    const y = this.scrollY;
-    const totalChannelCount = this.epgData.getChannelCount();
+    const totalChannelCount = this.epgData.length;
     const screenHeight = TVGuide.getHeight();
     let position = Math.trunc(
-      (y + screenHeight + EPG.timeBarHeight - EPG.channelMargin) /
+      (this.scrollY + screenHeight + EPG.timeBarHeight - EPG.channelMargin) /
         (EPG.channelHeight + EPG.channelMargin),
     );
 
@@ -112,7 +109,7 @@ export default class TVGuide extends Component {
     }
 
     // Add one extra row if we don't fill screen with current..
-    return y + screenHeight > position * EPG.channelHeight &&
+    return this.scrollY + screenHeight > position * EPG.channelHeight &&
       position < totalChannelCount - 1
       ? position + 1
       : position;
@@ -156,7 +153,7 @@ export default class TVGuide extends Component {
   }
 
   onDraw() {
-    if (this.epgData != null && this.epgData.hasData()) {
+    if (this.epgData != null && this.epgData.length) {
       this.minTimeBoundary = this.getTimeFrom(this.scrollX);
       this.maxTimeBoundary = this.getTimeFrom(this.scrollX + TVGuide.width);
 
@@ -295,10 +292,10 @@ export default class TVGuide extends Component {
       // Draw each event
       let foundFirst = false;
 
-      let epgEvents = this.epgData.getEvents(pos);
+      let epgEvents = this.epgData[pos].events;
 
       for (let event of epgEvents) {
-        if (this.isEventVisible(event.getStart(), event.getEnd())) {
+        if (this.isEventVisible(event.start, event.end)) {
           this.drawEvent(pos, event);
           foundFirst = true;
         } else if (foundFirst) {
@@ -311,22 +308,21 @@ export default class TVGuide extends Component {
   drawEvent(channelPosition, event) {
     this.setEventDrawingRectangle(channelPosition, event);
 
+    const isCurrent = Date.now() >= event.start && Date.now() <= event.end;
+    const channel = this.epgData[channelPosition];
     // Background
-    this.ctx.fillStyle = event.isCurrent() ? EPG.eventBgCurrent : EPG.eventBg;
+    this.ctx.fillStyle = isCurrent ? EPG.eventBgCurrent : EPG.eventBg;
     if (channelPosition == this.focusedChannelPosition) {
       if (this.focusedEventPosition != -1) {
-        let focusedEvent = this.epgData.getEvent(
-          channelPosition,
-          this.focusedEventPosition,
-        );
+        
+        const focusedEvent = channel.events[this.focusedEventPosition];
         if (focusedEvent == event) {
           this.ctx.fillStyle = EPG.eventBgFocus;
         }
-      } else if (event.isCurrent()) {
-        this.focusedEventPosition = this.epgData.getEventPosition(
-          channelPosition,
-          event,
-        );
+      } else if (isCurrent) {
+
+        this.focusedEventPosition = channel.events.findIndex(program => program.start === event.start && program.end === event.end);
+
         this.ctx.fillStyle = EPG.eventBgFocus;
       }
     }
@@ -353,17 +349,13 @@ export default class TVGuide extends Component {
     this.drawingRect.top +=
       (this.drawingRect.bottom - this.drawingRect.top) / 6;
 
-    const title = event.getTitle();
-
-    this.ctx.fillText(title, this.drawingRect.left, this.drawingRect.top);
+    this.ctx.fillText(event.title, this.drawingRect.left, this.drawingRect.top);
   }
 
   setEventDrawingRectangle(channelPosition, event) {
-    const start = event.getStart();
-    const end = event.getEnd();
-    this.drawingRect.left = this.getXFrom(start);
+    this.drawingRect.left = this.getXFrom(event.start);
     this.drawingRect.top = this.getTopFrom(channelPosition);
-    this.drawingRect.right = this.getXFrom(end) - EPG.channelMargin;
+    this.drawingRect.right = this.getXFrom(event.end) - EPG.channelMargin;
     this.drawingRect.bottom = this.drawingRect.top + EPG.channelHeight;
   }
 
@@ -397,7 +389,7 @@ export default class TVGuide extends Component {
     this.drawingRect.bottom = this.drawingRect.top + EPG.channelHeight;
 
     // Loading channel image into target for
-    let imageURL = this.epgData.getChannel(position).getImageURL();
+    let imageURL = this.epgData[position].icon;
 
     if (this.channelImageCache.has(imageURL)) {
       let image = this.channelImageCache.get(imageURL);
@@ -461,7 +453,7 @@ export default class TVGuide extends Component {
   }
 
   recalculateAndRedraw() {
-    if (this.epgData != null && this.epgData.hasData()) {
+    if (this.epgData != null && this.epgData.length) {
       this.resetBoundaries();
 
       this.calculateMaxVerticalScroll();
@@ -484,16 +476,13 @@ export default class TVGuide extends Component {
       case 37:
         programPosition -= 1;
         if (programPosition > -1) {
-          this.focusedEvent = this.epgData.getEvent(
-            this.focusedChannelPosition,
-            programPosition,
-          );
+          this.focusedEvent = this.epgData[this.focusedChannelPosition].events[programPosition];
           if (this.focusedEvent) {
             this.focusedEventPosition = programPosition;
             dx =
               -1 *
-              parseInt(
-                (this.focusedEvent.getEnd() - this.focusedEvent.getStart()) /
+              Math.trunc(
+                (this.focusedEvent.end - this.focusedEvent.start) /
                   this.msPerPixel,
               );
           }
@@ -513,7 +502,7 @@ export default class TVGuide extends Component {
             EPG.visibleChannelCount - EPG.verticalScrollBottomPadding
           ) {
             if (
-              this.epgData.getChannelCount() - channelPosition !==
+              this.epgData.length - channelPosition !==
               EPG.verticalScrollBottomPadding
             ) {
               this.scrollY += dy;
@@ -528,16 +517,13 @@ export default class TVGuide extends Component {
         if (
           programPosition > -1 &&
           programPosition <
-            this.epgData.getEventCount(this.focusedChannelPosition)
+            this.epgData[this.focusedChannelPosition].events.length
         ) {
-          this.focusedEvent = this.epgData.getEvent(
-            this.focusedChannelPosition,
-            programPosition,
-          );
+          this.focusedEvent = this.epgData[this.focusedChannelPosition].events[programPosition];
           if (this.focusedEvent) {
             this.focusedEventPosition = programPosition;
-            dx = parseInt(
-              (this.focusedEvent.getEnd() - this.focusedEvent.getStart()) /
+            dx = Math.trunc(
+              (this.focusedEvent.end - this.focusedEvent.start) /
                 this.msPerPixel,
             );
           }
@@ -546,7 +532,7 @@ export default class TVGuide extends Component {
         break;
       case 40:
         channelPosition += 1;
-        if (channelPosition < this.epgData.getChannelCount()) {
+        if (channelPosition < this.epgData.length) {
           dy = EPG.channelHeight + EPG.channelMargin;
           this.focusedEventPosition = this.getProgramPosition(
             channelPosition,
@@ -559,7 +545,7 @@ export default class TVGuide extends Component {
           ) {
             if (
               channelPosition !=
-              this.epgData.getChannelCount() - EPG.verticalScrollBottomPadding
+              this.epgData.length - EPG.verticalScrollBottomPadding
             ) {
               this.scrollY += dy;
             }
