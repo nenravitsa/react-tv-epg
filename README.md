@@ -10,8 +10,3 @@ NOTE : Use Arrow Keys to navigate in the Grid
 ## How to Run
 - npm install
 - npm start : will start the demo app in http://localhost:8000
-
-## Improvements
-- RTL (Arabic) Handling
-- Bug fixes
-

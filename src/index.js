@@ -1,7 +1,7 @@
 import "babel-polyfill";
 import React from "react";
 import ReactDOM from "react-dom";
-import TVGuide from "./EPG/components/TVGuide";
+import TVGuide from "./EPG/TVGuide";
 
 
 ReactDOM.render(<TVGuide />, document.getElementById("react-app"));

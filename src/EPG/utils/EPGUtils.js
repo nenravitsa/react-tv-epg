@@ -41,4 +41,22 @@ export default class EPGUtils {
         / EPG.timeLabelPeriod)
     );
   }
+
+  static fittingString(ctx, str, maxWidth) {
+    let crop = str;
+    let textWidth = ctx.measureText(str).width;
+    const ellipsis = '…';
+    const ellipsisWidth = ctx.measureText(ellipsis).width;
+    if (textWidth <= maxWidth) {
+      return str;
+    }
+    let len = str.length;
+    while (textWidth >= maxWidth - ellipsisWidth && len > 0) {
+      len -= 1;
+      crop = str.substring(0, len);
+      textWidth = ctx.measureText(crop).width;
+    }
+
+    return crop + ellipsis;
+  }
 }
