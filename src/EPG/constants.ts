@@ -4,7 +4,7 @@ export const EPG = {
   channelPadding: 8,
   channelHeight: 70,
   channelWidth: 70,
-  verticalScrollBottomPadding: 2,
+  verticalScrollPadding: 2,
   channelBg: '#000000',
   eventBg: 'rgba(0, 0, 0, 0.4)',
   eventBgCurrent: '#234054',

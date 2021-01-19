@@ -404,7 +404,7 @@ export default class TVGuide extends PureComponent {
           const program = focusedChannelEvents[programPosition];
           if (program) {
             this.focusedEventPosition = programPosition;
-            dx = -1 * Math.trunc(
+            dx = -Math.trunc(
               (program.end - program.start) / this.msPerPixel,
             );
           }
@@ -414,15 +414,16 @@ export default class TVGuide extends PureComponent {
       case 38:
         channelPosition -= 1;
         if (channelPosition >= 0) {
-          dy = -1 * TVGuide.channelHeight;
+          dy = -TVGuide.channelHeight;
           this.focusedEventPosition = this.getProgramPosition(
             channelPosition,
             this.getTimeFrom(this.scrollX + TVGuide.width / 2),
           );
-          if (channelPosition >= EPG.visibleChannelCount - EPG.verticalScrollBottomPadding) {
-            if (this.epgData.length - channelPosition !== EPG.verticalScrollBottomPadding) {
-              this.scrollY += dy;
-            }
+          const withScroll = (channelPosition >= EPG.visibleChannelCount - EPG.verticalScrollPadding)
+            && (this.epgData.length - channelPosition !== EPG.verticalScrollPadding);
+
+          if (withScroll) {
+            this.scrollY += dy;
           }
 
           this.focusedChannelPosition = channelPosition;
@@ -448,12 +449,11 @@ export default class TVGuide extends PureComponent {
             this.getTimeFrom(this.scrollX + TVGuide.width / 2),
           );
 
-          if (channelPosition > EPG.visibleChannelCount - EPG.verticalScrollBottomPadding) {
-            if (
-              channelPosition !== this.epgData.length - EPG.verticalScrollBottomPadding
-            ) {
-              this.scrollY += dy;
-            }
+          const withScroll = (channelPosition > EPG.visibleChannelCount - EPG.verticalScrollPadding)
+            && (channelPosition !== this.epgData.length - EPG.verticalScrollPadding)
+
+          if (withScroll) {
+            this.scrollY += dy;
           }
           this.focusedChannelPosition = channelPosition;
         }
